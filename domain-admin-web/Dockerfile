@@ -1,8 +1,13 @@
 FROM node:18-alpine AS build
+
+# 构建期 npm 源：默认官方源，国内构建传 --build-arg NPM_REGISTRY=https://registry.npmmirror.com
+ARG NPM_REGISTRY=https://registry.npmjs.org
+
 WORKDIR /app
 
 COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN npm config set registry "${NPM_REGISTRY}" \
+    && if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY . .
 ARG VITE_APP_API=/api

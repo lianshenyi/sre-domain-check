@@ -23,6 +23,13 @@ logs/
 .env
 env/backend.env
 
+# 本地导入数据可能包含敏感信息
+/import/*
+!/import/example.txt
+!/import/example.csv
+/config-import.txt
+/config-monitor-import.csv
+
 # JetBrains HTTP Client local credentials
 domain-admin/http/http-client.private.env.json
 

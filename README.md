@@ -9,6 +9,15 @@
 - `docker-compose.yml`：Docker Compose 部署文件
 - `k8s/`：Kubernetes 清单
 - `env/`：示例环境变量文件
+- `import/`：导入示例与本地导入数据（仅示例纳入 Git）
+
+## 本地导入文件
+
+将配置导入文件 `config-import.txt`、监控导入文件 `config-monitor-import.csv` 等原始数据统一放在根目录的 `import/` 下。目录不存在时先执行 `mkdir -p import`，导入时从该目录选择对应文件。
+
+仓库提供两个脱敏示例：[example.txt](import/example.txt) 用于域名 / 证书导入，每行一个域名，可附带端口；[example.csv](import/example.csv) 用于站点监控导入，包含名称、请求 URL、超时和检测频率。使用时复制为其他文件名再填写真实数据，示例中的域名仅用于展示格式。
+
+真实导入文件可能包含真实域名、IP 或凭据，仅保存在本地，不随仓库分发。`.gitignore` 仅放行 `import/example.txt` 和 `import/example.csv`，忽略该目录中的其他文件，并保留对根目录旧文件名的忽略规则，避免误提交；不要使用 `git add -f` 强制加入，也不要将真实数据填入示例文件。
 
 ## 部署方案文档
 

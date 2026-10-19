@@ -380,7 +380,6 @@ docker compose start backend worker scheduler frontend
 | `domain-admin-web/Dockerfile` | 前端镜像 |
 | `domain-admin-web/docker/nginx.conf` | 前端反向代理配置 |
 | `build.sh` | 镜像构建脚本（推仓库 / K8s） |
-| `docker-compose.smoke.yml` + `Dockerfile.app` | 单容器冒烟方案（非生产） |
 | `prd.md`、`spec.md`、`tasks.md` | 部署 PRD / 技术规格 / 任务清单（仓库根目录） |
 | `docs/20261019-04-public-repo-cleanup.md` | 公开仓库清理与发布清单 |
 

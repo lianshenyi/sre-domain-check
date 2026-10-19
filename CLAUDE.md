@@ -36,7 +36,6 @@
 | `domain-admin/Dockerfile` / `.worker` / `.scheduler` | 三个业务镜像，均 `FROM domain-admin-base:<tag>` |
 | `domain-admin-web/Dockerfile` + `domain-admin-web/docker/nginx.conf` | 前端多阶段构建与 nginx 配置 |
 | `build.sh` | 构建并打标签 `domain-admin-*` 镜像（用于推仓库 / K8s） |
-| `Dockerfile.app` + `docker-compose.smoke.yml` | 可选单容器冒烟方案（非生产） |
 | `k8s/` | Kubernetes 清单（`deploy.yaml`、`configmap.yaml` 等） |
 | `docs/` | 2026-03-20 系列修复记录（worker/scheduler/MySQL） |
 | `README.md` | 原有部署文档，本文件为其提炼与补充 |
@@ -246,11 +245,7 @@ docker compose exec redis redis-cli -n 1 del 'rq:queue:domain-admin'
 
 7. **首次登录失败**：确认使用的密码是首次初始化时的 `ADMIN_PASSWORD`；如确实忘记且可丢弃数据，删除 `./data/mysql` 后重新 `docker compose up -d`。
 
-## 10. 可选：单容器冒烟方案
-
-`Dockerfile.app` + `docker-compose.smoke.yml` 会把前端静态文件和 Flask（werkzeug `run_simple`）打进一个 `app` 容器，配合 mysql/redis 做快速冒烟（8080:8000）。仅用于验证，**不要用于生产**；生产使用主 `docker-compose.yml`。它同样依赖 `env/backend.env`。
-
-## 11. 仓库约定 / 不要做
+## 10. 仓库约定 / 不要做
 
 - 使用中文。
 - `prd.md`、`spec.md`、`tasks.md` 固定在仓库根目录；其余 Markdown 放在 `docs/`，按「时间 + 序号 + 备注」命名（例如 `20261019-04-public-repo-cleanup.md`）。
@@ -267,7 +262,7 @@ docker compose exec redis redis-cli -n 1 del 'rq:queue:domain-admin'
 - `.codex/` 与 `openspec/` 保留，用于 Codex / OpenSpec 继续开发；新建 change 放在 `openspec/changes/`。
 - `domain-admin/http/` 是手工 API 调试样例；请求头使用 `{{token}}`，本地真实 token 放 `domain-admin/http/http-client.private.env.json`（已 gitignore）。
 
-## 12. 相关文档
+## 11. 相关文档
 
 - `README.md`：镜像构建、推送、Compose / K8s 部署
 - `AGENTS.md`：Codex 协作说明（项目结构、命令、开发约定、安全红线）

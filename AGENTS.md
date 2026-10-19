@@ -20,9 +20,6 @@
 # 完整测试机环境（含 MySQL / Redis）
 docker compose up -d --build
 
-# 冒烟环境（app 单容器 + MySQL + Redis）
-docker compose -f docker-compose.smoke.yml up -d --build
-
 # 前端本地开发
 cd domain-admin-web && npm ci && npm run dev
 

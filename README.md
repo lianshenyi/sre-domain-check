@@ -9,7 +9,6 @@
 - `docker-compose.yml`：Docker Compose 部署文件
 - `k8s/`：Kubernetes 清单
 - `env/`：示例环境变量文件
-- `docker/`：冒烟环境启动脚本（`start-app.py`）
 
 ## 部署方案文档
 
@@ -135,14 +134,6 @@ curl -i -X POST http://127.0.0.1:8080/api/login \
 ### 测试机启动说明
 
 `docker-compose.yml` 已内置 `mysql` 和 `redis`，测试机无需外部依赖，一条命令即可拉起完整 6 个服务；首次启动前按上一节准备两个环境文件即可。
-
-如需更轻量的冒烟环境（仅 mysql + redis + 前后端合并容器，不含 worker / scheduler）：
-
-```bash
-docker compose -f docker-compose.smoke.yml up -d --build
-```
-
-> 冒烟方案使用 werkzeug 开发服务器，仅用于验证，不要用于生产。
 
 ## Kubernetes
 

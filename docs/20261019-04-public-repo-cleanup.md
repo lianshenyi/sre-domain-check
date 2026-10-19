@@ -43,19 +43,19 @@
 | `domain-admin/tests/top-1m.txt` | 11M | 代码中无引用，仅被已删除的上游开发文档提到 |
 | `domain-admin/.github/` | 28K | 上游 PyPI / Docker / 同步工作流，公开仓库中可能误触发 |
 | `domain-admin-web/pnpm-lock.yaml` | 92K | 与 `package-lock.json` 重复；Dockerfile 使用 npm，`npm ci --dry-run` 已验证通过 |
-| `docker/app.nginx.conf`、`docker/start-app.sh` | 8K | 无任何引用（`Dockerfile.app` 只使用 `start-app.py`） |
+| `docker/app.nginx.conf`、`docker/start-app.sh` | 8K | 无任何引用；冒烟方案（`Dockerfile.app` + `start-app.py`）也已整体删除 |
 | `COMPOSE_NOTES.md` | 4K | 内容已被 README / CLAUDE.md / 技术规格覆盖 |
+| `Dockerfile.app`、`docker-compose.smoke.yml`、`docker/start-app.py` | 12K | 已确认不需要冒烟方案；主 `docker-compose.yml` 已覆盖完整测试环境 |
 
 同时已把 `domain-admin-web/README.md` 的 `pnpm i` 改为 `npm ci`，并清理 `domain-admin/.dockerignore` 中指向已删除目录的规则。
 
-删除后工作区（不含 `.git`）约 2.0M；`.git` 中的历史对象不会自动变小，公开前仍需执行第 4.1 节的历史重建。
+删除后工作区（不含 `.git`）约 2.0M；`.git` 中的旧历史对象不会自动变小，重建过程见第 4.1 节。
 
 ## 3. 需要确认后决定
 
 | 路径 | 体积 | 说明 |
 | --- | --- | --- |
 | `domain-admin/tests/`（删除 `top-1m.txt` 后） | 约 124K | 保留可维持代码质量；纯部署仓库可整体删除 |
-| `Dockerfile.app` + `docker-compose.smoke.yml` + `docker/start-app.py` | 12K | 轻量冒烟方案；保留可让测试机只起 3 个容器，删除可消除与主 compose 重复的 mysql/redis 定义 |
 | `domain-admin-web/template/` + `more-copy.config.cjs` | 36K | 前端代码生成工具；开发不用可删除 |
 | `domain-admin/README.md`、`CHANGELOG.md` | 36K | 上游说明与变更记录；建议保留以保留来源与 MIT 归属 |
 | `k8s/` | 24K | 若公开仓库只做 Compose，可整体删除；保留则已做脱敏 |
@@ -123,12 +123,6 @@ cp .env.example .env
 cp env/backend.env.example env/backend.env
 docker build --network host -t domain-admin-base:latest -f domain-admin/Dockerfile.base domain-admin
 docker compose up -d --build
-```
-
-轻量冒烟环境（3 个容器：mysql + redis + app，不含 worker / scheduler）：
-
-```bash
-docker compose -f docker-compose.smoke.yml up -d --build
 ```
 
 如需在测试机上直连 MySQL / Redis 调试，可临时使用 override（不要用于公网）：

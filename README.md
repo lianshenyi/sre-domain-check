@@ -43,6 +43,7 @@ REGION=cn ./build.sh latest backend      # 国内源，只构建 backend
 # 基础镜像
 docker build --network host \
   --build-arg APT_MIRROR=mirrors.aliyun.com \
+  --build-arg APT_SECURITY_MIRROR=archive.debian.org \
   --build-arg PIP_INDEX=https://mirrors.aliyun.com/pypi/simple/ \
   -t domain-admin-base:latest \
   -f domain-admin/Dockerfile.base \
@@ -60,6 +61,8 @@ docker build --network host \
 
 - 镜像源只影响构建期，产物内容与区域无关，镜像 tag 不需要区分 cn / global。
 - 切换 `REGION` 会使依赖安装层缓存失效，下一次构建会重新安装依赖；requirements 不变时后续构建继续走缓存。
+- **bullseye 已 EOL（2026-08-31）**：`bullseye-security` 的 deb 包已从常规镜像（阿里云、TUNA、`security.debian.org` 等）移除，但索引仍在，直接安装会大量 404。因此 `APT_SECURITY_MIRROR` 固定指向 `archive.debian.org`，cn / global 均如此；`APT_MIRROR` 只负责 `bullseye` 和 `bullseye-updates`。
+- 长期方案是把基础镜像从 `python:3.7.17-slim-bullseye` 升级到受支持的版本（Python 3.7 与 Debian 11 均已 EOL）。
 
 ### 手动构建
 

@@ -30,12 +30,16 @@ else
   NPM_REGISTRY="https://registry.npmjs.org"
 fi
 
+# bullseye 已 EOL，安全问题包已从常规镜像移除，只能从 archive 获取
+APT_SECURITY_MIRROR="archive.debian.org"
+
 BASE_IMAGE="domain-admin-base:${TAG}"
 
-echo "==> 镜像源: ${REGION} (apt=${APT_MIRROR}, pip=${PIP_INDEX}, npm=${NPM_REGISTRY})"
+echo "==> 镜像源: ${REGION} (apt=${APT_MIRROR}, apt-security=${APT_SECURITY_MIRROR}, pip=${PIP_INDEX}, npm=${NPM_REGISTRY})"
 echo "==> 构建基础镜像: ${BASE_IMAGE}"
 docker build --network host \
   --build-arg APT_MIRROR="${APT_MIRROR}" \
+  --build-arg APT_SECURITY_MIRROR="${APT_SECURITY_MIRROR}" \
   --build-arg PIP_INDEX="${PIP_INDEX}" \
   -t "${BASE_IMAGE}" \
   -f domain-admin/Dockerfile.base \

@@ -3,7 +3,10 @@
 FROM python:3.7.17-slim-bullseye
 
 # 构建期镜像源：默认官方源，国内构建传 --build-arg APT_MIRROR=mirrors.aliyun.com 等
+# bullseye 已 EOL（2026-08-31），安全问题包已从常规镜像移除，只能从 archive.debian.org 取，
+# 因此 security 套件单独用 APT_SECURITY_MIRROR 控制
 ARG APT_MIRROR=deb.debian.org
+ARG APT_SECURITY_MIRROR=archive.debian.org
 ARG PIP_INDEX=https://pypi.org/simple/
 
 WORKDIR /app
@@ -11,7 +14,11 @@ WORKDIR /app
 # 先只复制依赖清单 → 依赖不变时这一层走缓存
 COPY requirements/production.txt /app/requirements/production.txt
 
-RUN sed -i "s|deb.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list \
+RUN sed -i \
+      -e "s|deb.debian.org/debian-security|__SEC_MIRROR__/debian-security|g" \
+      -e "s|deb.debian.org|${APT_MIRROR}|g" \
+      -e "s|__SEC_MIRROR__|${APT_SECURITY_MIRROR}|g" \
+      /etc/apt/sources.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
        gcc libffi-dev libssl-dev build-essential bash tzdata \

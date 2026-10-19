@@ -1,0 +1,6 @@
+ARG BASE_IMAGE=domain-admin-base:latest
+FROM ${BASE_IMAGE}
+
+COPY . /app
+
+CMD ["python", "-m", "domain_admin.scheduler"]

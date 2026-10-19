@@ -1,0 +1,7 @@
+logs
+temp
+database
+http
+tests
+.env
+.pytest_cache

@@ -1,0 +1,138 @@
+
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+POST {{baseUrl}}/api/issueCertificate
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "domains": ["zmlm.com.cn", "www.zmlm.com.cn"],
+  "challenge_type": "HTTP01"
+}
+
+###
+
+POST {{baseUrl}}/api/verifyCertificateById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "issue_certificate_id": 21
+}
+
+###
+
+POST {{baseUrl}}/api/renewCertificate
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "issue_certificate_id": 20
+}
+
+###
+
+POST {{baseUrl}}/api/getDomainById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 3
+}
+
+###
+POST {{baseUrl}}/api/deleteDomainById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 1
+}
+
+###
+POST {{baseUrl}}/api/updateDomainCertInfoById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 3
+}
+
+###
+POST {{baseUrl}}/api/updateAllDomainCertInfo
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+POST {{baseUrl}}/api/updateAllDomainCertInfoOfUser
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+POST {{baseUrl}}/api/sendDomainInfoListEmail
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "to_addresses": [
+    "1940607002@qq.com"
+  ]
+}
+
+###
+
+POST {{baseUrl}}/api/checkDomainCert
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+
+POST {{baseUrl}}/api/exportDomainToFile
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+
+POST {{baseUrl}}/api/getAllDomainListOfUser
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+POST {{baseUrl}}/api/getWhoisRaw
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "domain": "www.baidu.com"
+}
+
+###
+POST {{baseUrl}}/api/notifyWebHook
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "issue_certificate_id": 3,
+  "url": "http://127.0.0.1:8082/issueCertificate",
+  "headers": {
+     "X-Token": "xxx"
+  }
+}
+
+###
+

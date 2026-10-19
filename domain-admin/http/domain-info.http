@@ -1,0 +1,141 @@
+
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+###
+POST {{baseUrl}}/api/addDomainInfo
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "domain": "www.qq.com",
+  "tags": ["奇虎360", "QQ"]
+}
+
+###
+POST {{baseUrl}}/api/getDomainInfoList
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "keyword": "baidu"
+}
+
+
+###
+POST {{baseUrl}}/api/checkDomainExpire
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+
+}
+
+
+###
+
+POST {{baseUrl}}/api/updateDomainById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 2,
+  "domain": "www.baidu.com",
+  "alias": "百度",
+  "group_id": 1
+}
+
+###
+
+POST {{baseUrl}}/api/getDomainList
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "page": 1,
+  "size": 10
+}
+
+###
+
+POST {{baseUrl}}/api/getDomainById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 3
+}
+
+###
+POST {{baseUrl}}/api/deleteDomainById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 1
+}
+
+###
+POST {{baseUrl}}/api/updateDomainCertInfoById
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "id": 3
+}
+
+###
+POST {{baseUrl}}/api/updateAllDomainCertInfo
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+
+###
+
+POST {{baseUrl}}/api/checkDomainCert
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+
+POST {{baseUrl}}/api/exportDomainToFile
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+
+POST {{baseUrl}}/api/getAllDomainListOfUser
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+POST {{baseUrl}}/api/getWhoisRaw
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "domain": "www.baidu.com"
+}
+
+###
+POST {{baseUrl}}/api/exportDomainInfoFile
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "ext": "xlsx"
+}
+
+###

@@ -1,0 +1,17 @@
+# 共享基础镜像：系统依赖 + Python 依赖
+# backend / worker / scheduler 都基于此镜像，只需 COPY 代码 + 改 CMD
+FROM python:3.7.17-slim-bullseye
+
+WORKDIR /app
+
+# 先只复制依赖清单 → 依赖不变时这一层走缓存
+COPY requirements/production.txt /app/requirements/production.txt
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       gcc libffi-dev libssl-dev build-essential bash tzdata \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && pip install --no-cache-dir --upgrade pip setuptools wheel gunicorn \
+    && pip install --no-cache-dir -r requirements/production.txt \
+    && apt-get purge -y --auto-remove gcc build-essential \
+    && rm -rf /var/lib/apt/lists/*

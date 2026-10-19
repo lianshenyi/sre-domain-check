@@ -1,0 +1,29 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: domain-check
+spec:
+  ingressClassName: apisix
+  http:
+  - name: domain-check
+    priority: 100
+
+    match:
+      hosts:
+      - domain-check.example.com
+      paths:
+      - /*
+    backends:
+    - serviceName: domain-admin-frontend
+      servicePort: 80
+      weight: 100
+
+    # plugin_config_name: whiteip
+    plugin_config_namespace: api
+
+    timeout:
+      connect: 10s
+      read: 600s
+      send: 600s
+
+    websocket: true

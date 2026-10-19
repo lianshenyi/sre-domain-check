@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: domain-admin-config
+
+data:
+  TZ: "Asia/Shanghai"
+  APP_MODE: "production"
+  ENABLED_REGISTER: "true"
+  CACHE_BACKEND: "redis"
+  ASYNC_TASK_BACKEND: "redis"
+  REDIS_PREFIX: "domain_admin"
+  REDIS_CACHE_DB: "0"
+  REDIS_ASYNC_DB: "1"
+  REDIS_TASK_RESULT_TTL: "86400"
+  REDIS_LOCK_TTL: "3600"
+  # 部署前替换为实际连接串
+  DB_CONNECT_URL: "mysql://<db-user>:<db-password>@mysql:3306/<database>"
+  REDIS_URL: "redis://:<redis-password>@redis:6379/0"
+  FRONTEND_PORT: "80"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: domain-admin-frontend-nginx
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+
+      root /usr/share/nginx/html;
+      index index.html;
+
+      location /api/ {
+        proxy_pass http://domain-admin-backend:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
+      location /temp/ {
+        proxy_pass http://domain-admin-backend:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+    }

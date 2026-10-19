@@ -1,0 +1,11 @@
+{
+  "data": {
+    "mail_alias": "Domain Admin",
+    "mail_host": "smtp.163.com",
+    "mail_password": "123456",
+    "mail_port": "465",
+    "mail_username": "email@163.com"
+  },
+  "code": 0,
+  "msg": "success"
+}

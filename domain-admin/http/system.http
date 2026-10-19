@@ -1,0 +1,47 @@
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+POST {{baseUrl}}/api/getAllSystemConfig
+Content-Type: application/json
+X-Token: {{token}}
+
+###
+POST {{baseUrl}}/api/updateSystemConfig
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "key": "mail_username",
+  "value": "123@qq.com"
+}
+
+###
+
+POST {{baseUrl}}/api/getSystemVersion
+Content-Type: application/json
+X-Token: {{token}}
+
+{}
+
+###
+POST {{baseUrl}}/api/sendTestEmail
+Content-Type: application/json
+X-Token: {{token}}
+
+{
+  "mail_host": "smtp.163.com",
+  "mail_port": "465",
+  "mail_alias": "Domain Admin Test",
+  "mail_username": "",
+  "mail_password": "",
+  "subject": "测试邮件标题",
+  "content": "测试邮件内容",
+  "email_list": [""]
+}
+
+###
+

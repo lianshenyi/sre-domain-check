@@ -27,6 +27,42 @@
 cd /path/to/sre-domain-check
 ```
 
+### 国内 / 国际镜像源
+
+基础镜像的 apt / pip 与前端镜像的 npm 默认走官方源（`deb.debian.org` / `pypi.org` / `registry.npmjs.org`），国内构建会很慢。`build.sh` 支持通过 `REGION` 切换：
+
+```bash
+REGION=cn ./build.sh v1.0.1              # 国内源：阿里云 apt/pip + npmmirror
+REGION=cn ./build.sh latest backend      # 国内源，只构建 backend
+./build.sh v1.0.1                        # 国际源（默认），构建 base + 全部业务镜像
+```
+
+手动执行 `docker build` 时，国内构建需显式传参：
+
+```bash
+# 基础镜像
+docker build --network host \
+  --build-arg APT_MIRROR=mirrors.aliyun.com \
+  --build-arg PIP_INDEX=https://mirrors.aliyun.com/pypi/simple/ \
+  -t domain-admin-base:latest \
+  -f domain-admin/Dockerfile.base \
+  domain-admin
+
+# 前端镜像
+docker build --network host \
+  --build-arg NPM_REGISTRY=https://registry.npmmirror.com \
+  -t domain-admin-frontend:latest \
+  -f domain-admin-web/Dockerfile \
+  domain-admin-web
+```
+
+说明：
+
+- 镜像源只影响构建期，产物内容与区域无关，镜像 tag 不需要区分 cn / global。
+- 切换 `REGION` 会使依赖安装层缓存失效，下一次构建会重新安装依赖；requirements 不变时后续构建继续走缓存。
+
+### 手动构建
+
 先构建共享基础镜像（backend / worker / scheduler 都 `FROM` 它，Compose 不会构建 `Dockerfile.base`）：
 
 ```bash

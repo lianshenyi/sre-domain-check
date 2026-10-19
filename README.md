@@ -27,7 +27,16 @@
 cd /path/to/sre-domain-check
 ```
 
-构建 4 个镜像：
+先构建共享基础镜像（backend / worker / scheduler 都 `FROM` 它，Compose 不会构建 `Dockerfile.base`）：
+
+```bash
+docker build --network host \
+  -t domain-admin-base:latest \
+  -f domain-admin/Dockerfile.base \
+  domain-admin
+```
+
+再构建 4 个业务镜像：
 
 ```bash
 docker build --network host -t domain-admin-backend:latest -f domain-admin/Dockerfile domain-admin

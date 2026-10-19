@@ -2,7 +2,7 @@
   <div class="app-container">
     <!-- 操作按钮 -->
     <div
-      class="flex"
+      class="domain-info-list__actions flex"
       style="justify-content: space-between"
     >
       <el-button
@@ -21,7 +21,7 @@
         ></SelectGroup> -->
 
       <el-input
-        class="ml-sm"
+        class="domain-info-list__search ml-sm"
         style="width: 260px"
         v-model="keyword"
         :placeholder="$t('搜索域名、标签')"
@@ -49,12 +49,12 @@
 
     <!-- 工具栏 -->
     <div
-      class="flex mt-sm"
+      class="domain-info-list__toolbar flex mt-sm"
       style="align-items: center"
     >
       <DataCount :value="total"></DataCount>
       <div
-        class="flex"
+        class="domain-info-list__toolbar-actions flex"
         style="margin-left: auto"
       >
         <el-popconfirm
@@ -143,7 +143,7 @@
 
     <!-- 数据列表 -->
     <DataTable
-      class="mt-sm"
+      class="domain-info-list__table mt-sm"
       v-loading="loading"
       :tableColumns="tableColumns"
       :data="list"
@@ -158,7 +158,7 @@
 
     <!-- 翻页 -->
     <el-pagination
-      class="mt-md justify-center"
+      class="domain-info-list__pagination mt-md justify-center"
       background
       layout="total, sizes, prev, pager, next"
       :total="total"
@@ -539,6 +539,48 @@ export default {
   },
 }
 </script>
+
+<style lang="less">
+@media (max-width: 767px) {
+  .domain-info-list__actions {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .domain-info-list__search.el-input {
+    margin-left: 0;
+    width: 100% !important;
+  }
+
+  .domain-info-list__table {
+    overflow-x: auto;
+  }
+
+  .domain-info-list__toolbar {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+
+  .domain-info-list__toolbar-actions {
+    width: 100%;
+    margin-left: 0 !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .domain-info-list__toolbar-actions > * {
+    margin: 0 !important;
+    white-space: nowrap;
+  }
+
+  .domain-info-list__pagination {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
+</style>
 
 <style lang="less"></style>
 

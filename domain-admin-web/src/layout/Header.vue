@@ -1,11 +1,13 @@
 <template>
   <div class="layout__header">
-    <div
+    <button
       class="menu__button"
+      type="button"
+      aria-label="切换导航菜单"
       @click="handleMenuClick"
     >
       <el-icon style="color: #4f5a76; font-size: 20px"><Menu /></el-icon>
-    </div>
+    </button>
 
     <a
       class="layout__header__logo__span"
@@ -197,6 +199,8 @@ import { languageOptions } from '@/i18n/index.js'
 export default {
   name: 'Header',
 
+  emits: ['toggle-mobile-menu'],
+
   props: {},
 
   components: {
@@ -364,6 +368,11 @@ export default {
     },
 
     handleMenuClick() {
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        this.$emit('toggle-mobile-menu')
+        return
+      }
+
       this.toggleCollapse()
     },
 
@@ -601,6 +610,36 @@ export default {
 
   .header-tool-btn--link {
     color: #ffffff;
+  }
+}
+
+@media (max-width: 767px) {
+  .layout__header {
+    min-width: 0;
+    padding: 0 10px;
+  }
+
+  .layout__header__logo__span > span,
+  .header-breadcrumb,
+  .header-tool-btn--link,
+  .header-tool-btn--doc,
+  .layout__header .el-radio-group,
+  .avatar-group > span,
+  .header-tool-btn__text {
+    display: none;
+  }
+
+  .theme--blue .menu__button {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
   }
 }
 </style>

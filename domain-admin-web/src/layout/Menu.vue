@@ -1,5 +1,16 @@
 <template>
-  <div class="layout-container">
+  <div
+    class="layout-container"
+    :class="{ 'layout-container--mobile-open': mobileOpen }"
+  >
+    <button
+      class="layout__mobile-menu-close"
+      type="button"
+      aria-label="关闭导航菜单"
+      @click="handleMobileMenuClose"
+    >
+      <el-icon><Close /></el-icon>
+    </button>
     <div class="layout__menu-wrap">
       <div class="layout__menu-inner">
         <el-scrollbar class="layout__menu-scrollbar">
@@ -11,7 +22,7 @@
             menu-trigger="click"
             unique-opened
             @select="handleSelect"
-            :collapse="isCollapse"
+            :collapse="isCollapse && !mobileOpen"
             ref="menu"
           >
             <template v-for="route in routes">
@@ -97,7 +108,14 @@ import SystemInfo from './Info.vue'
 export default {
   name: 'Menu',
 
-  props: {},
+  props: {
+    mobileOpen: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
+  emits: ['close-mobile-menu'],
 
   components: {
     SystemInfo,
@@ -145,6 +163,7 @@ export default {
     handleRouteClick(route) {
       // console.log('handleRouteClick', route)
       this.$router.push({ name: route.name })
+      this.handleMobileMenuClose()
       // this.activeIndex = route.name
       // console.log(console.dir(this.$refs.menu))
     },
@@ -186,6 +205,10 @@ export default {
 
       this.toggleCollapse()
     },
+
+    handleMobileMenuClose() {
+      this.$emit('close-mobile-menu')
+    },
   },
 
   created() {
@@ -221,6 +244,10 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   background-color: #1e222d;
+}
+
+.layout__mobile-menu-close {
+  display: none;
 }
 
 .layout__menu {
@@ -371,6 +398,48 @@ export default {
 
 .layout__menu-scrollbar {
   flex: 1;
+}
+
+@media (max-width: 767px) {
+  .app-layout__main > .layout-container {
+    position: fixed;
+    z-index: 1001;
+    inset: 0 auto 0 0;
+    width: min(280px, calc(100vw - 48px));
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
+  }
+
+  .app-layout__main > .layout-container--mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.25);
+  }
+
+  .layout__menu-wrap {
+    width: 100%;
+  }
+
+  .layout__menu__collapse-wrap {
+    display: none !important;
+  }
+
+  .layout__mobile-menu-close {
+    position: absolute;
+    z-index: 1;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #c1c6c8;
+    cursor: pointer;
+  }
 }
 </style>
 

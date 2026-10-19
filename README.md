@@ -25,9 +25,11 @@
 - [技术规格：Docker Compose 服务器部署](spec.md)
 - [任务清单：Docker Compose 服务器部署](tasks.md)
 - [公开仓库清理与发布清单](docs/20261019-04-public-repo-cleanup.md)
+- [域名列表移动端横向溢出修复](docs/20261019-05-fix-mobile-domain-list-overflow.md)
 - [首次空库初始化并发竞态修复](docs/20261019-06-fix-initial-database-race.md)
 - [开发与部署指南（CLAUDE.md）](CLAUDE.md)
 - [Codex 协作说明（AGENTS.md）](AGENTS.md)
+- [运行手册（RUNBOOK.md）](RUNBOOK.md)
 
 ## 镜像构建
 

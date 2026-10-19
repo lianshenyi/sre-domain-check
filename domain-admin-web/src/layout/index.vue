@@ -1,9 +1,19 @@
 <template>
   <div class="app-layout">
-    <Header></Header>
+    <Header @toggle-mobile-menu="toggleMobileMenu"></Header>
 
     <div class="app-layout__main">
-      <Menu></Menu>
+      <button
+        v-if="isMobileMenuOpen"
+        class="app-layout__menu-mask"
+        type="button"
+        aria-label="关闭导航菜单"
+        @click="closeMobileMenu"
+      ></button>
+      <Menu
+        :mobile-open="isMobileMenuOpen"
+        @close-mobile-menu="closeMobileMenu"
+      ></Menu>
 
       <div class="app-layout__body">
 
@@ -55,7 +65,9 @@ export default {
   },
 
   data() {
-    return {}
+    return {
+      isMobileMenuOpen: false,
+    }
   },
 
   computed: {
@@ -76,6 +88,14 @@ export default {
   },
 
   methods: {
+    toggleMobileMenu() {
+      this.isMobileMenuOpen = !this.isMobileMenuOpen
+    },
+
+    closeMobileMenu() {
+      this.isMobileMenuOpen = false
+    },
+
     async getData() {},
   },
 
@@ -98,11 +118,13 @@ export default {
   display: flex;
   flex: 1;
   height: 0;
+  min-width: 0;
 }
 
 .app-layout__body {
   flex: 1;
   height: 100%;
+  min-width: 0;
   overflow: auto;
   overflow-y: overlay;
   padding: 10px 20px 20px;
@@ -115,6 +137,22 @@ export default {
 
 .app-layout__view {
   padding-top: 10px;
+}
+
+@media (max-width: 767px) {
+  .app-layout__menu-mask {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    width: 100%;
+    border: 0;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: default;
+  }
+
+  .app-layout__body {
+    padding: 10px;
+  }
 }
 
 /* fade-transform */

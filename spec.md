@@ -91,7 +91,7 @@ node:18-alpine ──build──▶ nginx:1.27-alpine + dist → frontend 镜像
    ./build.sh latest backend frontend worker scheduler
    ```
 
-4. 构建统一使用 `network: host`（Compose build 配置）或 `docker build --network host`，确保 apt / pip / npm 下载正常。
+4. 独立的 `docker build` 使用 `--network host` 确保 apt / pip / npm 下载正常；Compose 的 `build` 配置**不要**设置 `network: host`——Buildx 0.37.2+ 要求 `network.host` entitlement，而 Compose <= v5.6.0 不会给 bake 传 `--allow=network.host`，会直接报错。
 
 ### 3.3 重建策略
 

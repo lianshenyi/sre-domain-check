@@ -43,7 +43,7 @@
 ## 3. 服务器前置条件
 
 - Linux 服务器（x86_64 / arm64 均可），已安装 Docker Engine 20.10+ 与 **Docker Compose v2**（使用 `docker compose` 子命令，不是旧的 `docker-compose`）。
-- Compose 中的构建使用 `network: host`，因此构建过程应在 Linux 上执行（Docker Desktop for Mac/Windows 的构建网络行为不同）。
+- Compose 的 build 配置使用默认 bridge 网络，**不要加 `network: host`**：Buildx 0.37.2+ 会要求 `network.host` entitlement，而 Compose <= v5.6.0 调用 bake 时不会传 `--allow=network.host`。独立的 `docker build --network host`（基础镜像构建、`build.sh`）不受影响。
 - 服务器可访问外网：Docker Hub（`mysql:8.0`、`redis:7-alpine`、`python:3.7.17-slim-bullseye`、`node:18-alpine`、`nginx:1.27-alpine`）、PyPI、npm registry。
 - 资源建议：≥ 2 核 4G 内存（前端 node 构建较吃内存），磁盘 ≥ 10GB。
 - 防火墙只放行 `HTTP_PORT`（默认 8080），其余端口不对外。

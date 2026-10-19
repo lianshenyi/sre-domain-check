@@ -88,7 +88,7 @@ git fetch --prune origin
 git gc --prune=now
 ```
 
-> 重建前的远端 `main` 为 `3a3b07c`，force-push 后该提交不再被任何分支引用。若仓库曾经公开或被他人克隆，仍应把所有出现过真实凭据的账号 / token 视为已泄露并轮换。
+> 重建前的远端 `main` 为 `3a3b07c`，force-push 后该提交不再被任何分支引用。重建后的公开提交为 `6ac924d`（`Initial public release`），本地与 `origin/main` 已一致。若仓库曾经公开或被他人克隆，仍应把所有出现过真实凭据的账号 / token 视为已泄露并轮换。
 
 > 如果必须保留提交历史，使用 `git filter-repo` 移除敏感路径 / 大文件并替换文本，再推送。
 

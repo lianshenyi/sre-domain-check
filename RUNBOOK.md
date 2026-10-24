@@ -7,8 +7,8 @@
 ```bash
 cp .env.example .env
 cp env/backend.env.example env/backend.env
-docker build --network host -t domain-admin-base:latest -f domain-admin/Dockerfile.base domain-admin
-docker compose up -d --build
+scripts/release-compose.sh deps
+docker compose up -d
 ```
 
 前端本地开发（默认 Vite 地址为 `http://localhost:5173`）：
@@ -47,3 +47,9 @@ curl -i http://localhost:${HTTP_PORT:-8080}/api/getSystemVersion
 - 后端无法连库：确认 MySQL healthy，且 `DB_CONNECT_URL` 与 `.env` 的 MySQL 用户、密码、数据库一致；`env_file` 不会展开 `${...}`。
 - 前端 502：执行 `docker compose logs --tail=200 backend`。
 - 端口冲突：在 `.env` 调整 `HTTP_PORT` 后重新执行 `docker compose up -d`。
+
+## 依赖 base 与回滚
+
+- Python base 由 `production.lock` 的摘要命名；日常使用 `scripts/build-images.sh frontend|backend|deps|all` 或 `scripts/release-compose.sh <scope>`，仅依赖变更会重建 base。
+- Bullseye EOL 后默认使用腾讯 Archive。若该源失败，仅本次命令可切到阿里：`APT_ARCHIVE_BASE=https://mirrors.aliyun.com/debian-archive PIP_INDEX=https://mirrors.aliyun.com/pypi/simple/ scripts/release-compose.sh deps`。不要使用常规 `/debian-security` 源。
+- 发布命令会输出 `rollback_stamp`；仅恢复受影响服务：`scripts/release-compose.sh rollback <stamp> deps`。镜像回滚不会回滚 MySQL/Redis 数据卷。

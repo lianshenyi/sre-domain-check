@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM node:18-alpine AS build
 
 # 构建期 npm 源：默认官方源，国内构建传 --build-arg NPM_REGISTRY=https://registry.npmmirror.com
@@ -6,8 +7,9 @@ ARG NPM_REGISTRY=https://registry.npmjs.org
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm config set registry "${NPM_REGISTRY}" \
-    && if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN --mount=type=cache,target=/root/.npm \
+    npm config set registry "${NPM_REGISTRY}" \
+    && if [ -f package-lock.json ]; then npm ci --cache /root/.npm; else npm install --cache /root/.npm; fi
 
 COPY . .
 ARG VITE_APP_API=/api

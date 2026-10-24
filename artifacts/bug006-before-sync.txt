@@ -1,0 +1,10 @@
+6c989d0ef71bb37cc9da85dc969a251ef72776d73261813ae0132e6e9e95549f  scripts/build-images.sh
+4ec851b289ca0e377f4ed1c4f70db8043d877c9a1c044d022db54f33df75e347  tests/scripts/test_build_lib.sh
+2c0dd0f9c899b7383251f09c5940fe4d3b5845b67f7e5ac41debc72925a9efdb  docs/20261022-07-build-cache-scope-optimization.md
+dd403213947f72441be57acbd5e47a96b0360c8c5f6c59436638db5b1ff3557e  openspec/changes/build-cache-scope-optimization/tasks.md
+domain-admin-backend|3722ed5ef3ba|Up 20 minutes
+domain-admin-frontend|9ff2fb4e65b4|Up 26 hours
+domain-admin-mysql|d580678ec1bb|Up 3 days (healthy)
+domain-admin-redis|7036e5106366|Up 3 days (healthy)
+domain-admin-scheduler|92ef2e728ccc|Up 20 minutes
+domain-admin-worker|17aa15259808|Up 20 minutes

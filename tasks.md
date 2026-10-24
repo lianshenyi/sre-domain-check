@@ -59,16 +59,16 @@
 
 ## 2. 镜像构建
 
-- [ ] **T2-1 构建共享基础镜像**（首次部署、依赖变更时必做）：
+- [ ] **T2-1 构建共享基础镜像**（首次部署、生产 lock 变更时必做）：
   ```bash
   docker build --network host \
-    -t domain-admin-base:latest \
+  -t domain-admin-base:deps-<production-lock-digest> \
     -f domain-admin/Dockerfile.base \
     domain-admin
   ```
-- [ ] **T2-2 构建 Compose 业务镜像**：
+- [ ] **T2-2 按范围构建 Compose 业务镜像**：
   ```bash
-  docker compose build
+  scripts/build-images.sh <frontend|backend|deps|all>
   ```
 - [ ] **T2-3 确认镜像存在**：应看到 `<项目名>-backend`、`<项目名>-frontend`、`<项目名>-worker`、`<项目名>-scheduler`，以及 `domain-admin-base:latest`。
   ```bash

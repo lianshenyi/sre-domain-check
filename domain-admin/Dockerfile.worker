@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=domain-admin-base:latest
+ARG BASE_IMAGE=domain-admin-base:deps-dcb7d8c888558c95
 FROM ${BASE_IMAGE}
 
 COPY . /app

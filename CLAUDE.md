@@ -32,7 +32,7 @@
 | `docker-compose.yml` | 生产 Compose 编排（6 个服务） |
 | `.env.example` | Compose 插值变量样例（`HTTP_PORT`、MySQL 初始化账号） |
 | `env/backend.env.example` | backend/worker/scheduler 环境变量样例（`DB_CONNECT_URL`、Redis、管理员账号等） |
-| `domain-admin/Dockerfile.base` | 共享基础镜像 `domain-admin-base:<tag>`（Python 3.7 + 生产依赖 + tzdata） |
+| `domain-admin/Dockerfile.base` | 共享基础镜像 `domain-admin-base:deps-<lock-digest>`（Python 3.7 + 锁定生产依赖 + tzdata） |
 | `domain-admin/Dockerfile` / `.worker` / `.scheduler` | 三个业务镜像，均 `FROM domain-admin-base:<tag>` |
 | `domain-admin-web/Dockerfile` + `domain-admin-web/docker/nginx.conf` | 前端多阶段构建与 nginx 配置 |
 | `build.sh` | 构建并打标签 `domain-admin-*` 镜像（用于推仓库 / K8s） |
@@ -58,14 +58,9 @@ cp .env.example .env
 cp env/backend.env.example env/backend.env
 # 编辑 .env 和 env/backend.env（见 4.1），保证密码 / 库名一致
 
-# 必须先构建基础镜像
-docker build --network host \
-  -t domain-admin-base:latest \
-  -f domain-admin/Dockerfile.base \
-  domain-admin
-
-# Compose 自己构建 4 个业务镜像并启动
-docker compose up -d --build
+# 校验 production.txt→lock 完整性、Python 3.7 hash dry-run，再按范围构建并发布
+scripts/verify-production-lock.sh
+scripts/release-compose.sh all
 ```
 
 ### 4.1 环境变量（两个文件均不入库）
@@ -115,14 +110,14 @@ SECRET_KEY=<随机长字符串>
 
 ### 4.2 基础镜像必须先生成
 
-`domain-admin/Dockerfile`、`.worker`、`.scheduler` 都是：
+`domain-admin/Dockerfile`、`.worker`、`.scheduler` 都通过 `BASE_IMAGE` 读取同一 `DOMAIN_ADMIN_BASE_IMAGE`。该镜像由 `production.lock` 的摘要命名：
 
 ```dockerfile
-ARG BASE_IMAGE=domain-admin-base:latest
+ARG BASE_IMAGE=domain-admin-base:deps-<lock-digest>
 FROM ${BASE_IMAGE}
 ```
 
-`docker compose build` **不会**构建 `Dockerfile.base`，只会尝试拉取 `domain-admin-base:latest`。因此首次部署、或 `requirements/production.txt` 变更后，必须手动重建 base（见 4 与 5）。
+`docker compose build` **不会**构建 `Dockerfile.base`。使用 `scripts/build-images.sh deps` 或 `scripts/release-compose.sh deps` 会在 lock 变化或本地没有对应 digest base 时构建它；仅业务代码或前端代码更新则复用已有 base。
 
 ### 4.3 启动与验证
 

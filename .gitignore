@@ -43,6 +43,7 @@ crash.log
 # Build artifacts
 package/
 lambda_function.zip
+.README.md
 
 # Ignore nested source repos by default in this deployment repo.
 # Keep only deployment-related files that this root repo owns.

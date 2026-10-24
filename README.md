@@ -27,11 +27,28 @@
 - [公开仓库清理与发布清单](docs/20261019-04-public-repo-cleanup.md)
 - [域名列表移动端横向溢出修复](docs/20261019-05-fix-mobile-domain-list-overflow.md)
 - [首次空库初始化并发竞态修复](docs/20261019-06-fix-initial-database-race.md)
+- [第一阶段构建缓存与范围发布优化](docs/20261022-07-build-cache-scope-optimization.md)
 - [开发与部署指南（CLAUDE.md）](CLAUDE.md)
 - [Codex 协作说明（AGENTS.md）](AGENTS.md)
 - [运行手册（RUNBOOK.md）](RUNBOOK.md)
 
 ## 镜像构建
+
+### 推荐：范围构建与不可变 Python base
+
+生产依赖已锁定在 `domain-admin/requirements/production.lock`；三个 Python 角色共享由该文件摘要决定的 `domain-admin-base:deps-<digest>`。推荐通过脚本发布，而不是每次执行全量 `docker compose up -d --build`：
+
+```bash
+scripts/verify-production-lock.sh
+scripts/build-images.sh frontend       # 仅前端
+scripts/build-images.sh backend        # 仅 backend / worker / scheduler 代码
+scripts/build-images.sh deps           # 依赖变更：重建 base + 三个 Python 角色
+scripts/release-compose.sh frontend    # 构建并仅替换 frontend
+```
+
+`verify-production-lock.sh` 会先核对 `production.txt` 与 lock 的顶层依赖完整性，再执行 Python 3.7 的带哈希 dry-run 安装。
+
+详见[构建优化变更记录](docs/20261022-07-build-cache-scope-optimization.md)，包括自动范围判断、冷/热缓存取证与回滚命令。
 
 先进入目录：
 
@@ -41,7 +58,7 @@ cd /path/to/sre-domain-check
 
 ### 国内 / 国际镜像源
 
-基础镜像的 apt / pip 与前端镜像的 npm 默认走官方源（`deb.debian.org` / `pypi.org` / `registry.npmjs.org`），国内构建会很慢。`build.sh` 支持通过 `REGION` 切换：
+基础镜像的 Bullseye apt 已固定使用 Archive；pip 与前端 npm 可随区域切换。`build.sh` 支持通过 `REGION` 切换：
 
 ```bash
 REGION=cn ./build.sh v1.0.1              # 国内源：阿里云 apt/pip + npmmirror
@@ -54,8 +71,7 @@ REGION=cn ./build.sh latest backend      # 国内源，只构建 backend
 ```bash
 # 基础镜像
 docker build --network host \
-  --build-arg APT_MIRROR=mirrors.aliyun.com \
-  --build-arg APT_SECURITY_MIRROR=archive.debian.org \
+  --build-arg APT_ARCHIVE_BASE=https://mirrors.cloud.tencent.com/debian-archive \
   --build-arg PIP_INDEX=https://mirrors.aliyun.com/pypi/simple/ \
   -t domain-admin-base:latest \
   -f domain-admin/Dockerfile.base \
@@ -73,7 +89,7 @@ docker build --network host \
 
 - 镜像源只影响构建期，产物内容与区域无关，镜像 tag 不需要区分 cn / global。
 - 切换 `REGION` 会使依赖安装层缓存失效，下一次构建会重新安装依赖；requirements 不变时后续构建继续走缓存。
-- **bullseye 已 EOL（2026-08-31）**：`bullseye-security` 的 deb 包已从常规镜像（阿里云、TUNA、`security.debian.org` 等）移除，但索引仍在，直接安装会大量 404。因此 `APT_SECURITY_MIRROR` 固定指向 `archive.debian.org`，cn / global 均如此；`APT_MIRROR` 只负责 `bullseye` 和 `bullseye-updates`。
+- **bullseye 已 EOL（2026-08-31）**：基础镜像必须传完整 `APT_ARCHIVE_BASE`，默认 `https://mirrors.cloud.tencent.com/debian-archive`；它同时提供 `/debian` 和 `/debian-security` 归档路径。若腾讯源不可用，单次构建可改为 `APT_ARCHIVE_BASE=https://mirrors.aliyun.com/debian-archive`。禁止回退到常规 `/debian-security` 命名空间，否则索引可能指向已归档包并产生 404。
 - 长期方案是把基础镜像从 `python:3.7.17-slim-bullseye` 升级到受支持的版本（Python 3.7 与 Debian 11 均已 EOL）。
 
 ### 手动构建

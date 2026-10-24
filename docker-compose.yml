@@ -39,11 +39,12 @@ services:
       retries: 20
 
   backend:
+    image: domain-admin-backend:latest
     build:
       context: ./domain-admin
       dockerfile: Dockerfile
       args:
-        BASE_IMAGE: domain-admin-base:latest
+        BASE_IMAGE: ${DOMAIN_ADMIN_BASE_IMAGE:-domain-admin-base:deps-dcb7d8c888558c95}
     container_name: domain-admin-backend
     restart: unless-stopped
     depends_on:
@@ -65,6 +66,7 @@ services:
       - "8000"
 
   frontend:
+    image: domain-admin-frontend:latest
     build:
       context: ./domain-admin-web
       dockerfile: Dockerfile
@@ -79,11 +81,12 @@ services:
       - "${HTTP_PORT:-8080}:80"
 
   worker:
+    image: domain-admin-worker:latest
     build:
       context: ./domain-admin
       dockerfile: Dockerfile.worker
       args:
-        BASE_IMAGE: domain-admin-base:latest
+        BASE_IMAGE: ${DOMAIN_ADMIN_BASE_IMAGE:-domain-admin-base:deps-dcb7d8c888558c95}
     container_name: domain-admin-worker
     restart: unless-stopped
     depends_on:
@@ -103,11 +106,12 @@ services:
       - ./data/temp:/app/temp
 
   scheduler:
+    image: domain-admin-scheduler:latest
     build:
       context: ./domain-admin
       dockerfile: Dockerfile.scheduler
       args:
-        BASE_IMAGE: domain-admin-base:latest
+        BASE_IMAGE: ${DOMAIN_ADMIN_BASE_IMAGE:-domain-admin-base:deps-dcb7d8c888558c95}
     container_name: domain-admin-scheduler
     restart: unless-stopped
     depends_on:

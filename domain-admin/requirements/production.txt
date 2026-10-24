@@ -1,4 +1,5 @@
 six
+gunicorn==22.0.0
 Flask
 peewee
 werkzeug
@@ -6,7 +7,7 @@ Jinja2
 requests
 pymysql
 Flask-Cors
-python-dateutil
+python-dateutil==2.9.0.post0
 apscheduler
 PyJWT
 bcrypt

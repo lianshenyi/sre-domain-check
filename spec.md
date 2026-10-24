@@ -64,7 +64,7 @@
 python:3.7.17-slim-bullseye
         │  Dockerfile.base（系统依赖 + requirements/production.txt）
         ▼
-domain-admin-base:latest
+domain-admin-base:deps-<production-lock-digest>
         │
         ├── Dockerfile           → backend 镜像
         ├── Dockerfile.worker    → worker 镜像
@@ -75,7 +75,7 @@ node:18-alpine ──build──▶ nginx:1.27-alpine + dist → frontend 镜像
 
 ### 3.2 构建规则
 
-1. **必须先构建基础镜像**。三个后端 Dockerfile 的 `FROM ${BASE_IMAGE}` 默认值为 `domain-admin-base:latest`，Compose 不会构建 `Dockerfile.base`。
+1. **基础镜像由生产 lock 决定**。`production.lock` 使用哈希固定依赖，三个后端 Dockerfile 的 `FROM ${BASE_IMAGE}` 默认值为 `domain-admin-base:deps-<production-lock-digest>`，Compose 不会构建 `Dockerfile.base`。使用 `scripts/build-images.sh deps` 生成并复用该镜像。
 
    ```bash
    docker build --network host \
@@ -97,9 +97,9 @@ node:18-alpine ──build──▶ nginx:1.27-alpine + dist → frontend 镜像
 
 | 变更类型 | 操作 |
 | --- | --- |
-| 仅业务代码 | `docker compose up -d --build` |
-| `requirements/production.txt` | 先重建 `domain-admin-base:latest`，再 `docker compose up -d --build` |
-| 前端代码 / 依赖 | `docker compose up -d --build`（frontend 会重新执行 node 构建） |
+| 仅业务代码 | `scripts/release-compose.sh backend` |
+| `requirements/production.lock` / `Dockerfile.base` | `scripts/release-compose.sh deps` |
+| 前端代码 / 依赖 | `scripts/release-compose.sh frontend` |
 
 ## 4. 配置管理
 

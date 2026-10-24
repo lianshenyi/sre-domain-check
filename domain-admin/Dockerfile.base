@@ -1,29 +1,32 @@
+# syntax=docker/dockerfile:1.4
 # 共享基础镜像：系统依赖 + Python 依赖
 # backend / worker / scheduler 都基于此镜像，只需 COPY 代码 + 改 CMD
 FROM python:3.7.17-slim-bullseye
 
-# 构建期镜像源：默认官方源，国内构建传 --build-arg APT_MIRROR=mirrors.aliyun.com 等
-# bullseye 已 EOL（2026-08-31），安全问题包已从常规镜像移除，只能从 archive.debian.org 取，
-# 因此 security 套件单独用 APT_SECURITY_MIRROR 控制
-ARG APT_MIRROR=deb.debian.org
-ARG APT_SECURITY_MIRROR=archive.debian.org
+# Bullseye 已 EOL，必须使用同时归档主仓、安全仓和更新仓的完整 base URL；
+# 不可把 security 套件回退到常规 /debian-security 命名空间，否则索引与包会不一致。
+ARG APT_ARCHIVE_BASE=https://mirrors.cloud.tencent.com/debian-archive
 ARG PIP_INDEX=https://pypi.org/simple/
 
 WORKDIR /app
 
-# 先只复制依赖清单 → 依赖不变时这一层走缓存
-COPY requirements/production.txt /app/requirements/production.txt
-
-RUN sed -i \
-      -e "s|deb.debian.org/debian-security|__SEC_MIRROR__/debian-security|g" \
-      -e "s|deb.debian.org|${APT_MIRROR}|g" \
-      -e "s|__SEC_MIRROR__|${APT_SECURITY_MIRROR}|g" \
-      /etc/apt/sources.list \
-    && apt-get update \
+# 先安装不随 Python lock 改变的系统包，避免依赖升级使 apt 层缓存失效。
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    printf '%s\n' \
+      "deb [check-valid-until=no] ${APT_ARCHIVE_BASE}/debian bullseye main" \
+      "deb [check-valid-until=no] ${APT_ARCHIVE_BASE}/debian bullseye-updates main" \
+      "deb [check-valid-until=no] ${APT_ARCHIVE_BASE}/debian-security bullseye-security main" \
+      > /etc/apt/sources.list \
+    && apt-get -o Acquire::Languages=none update \
     && apt-get install -y --no-install-recommends \
        gcc libffi-dev libssl-dev build-essential bash tzdata \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-    && pip install --no-cache-dir -i "${PIP_INDEX}" --upgrade pip setuptools wheel gunicorn \
-    && pip install --no-cache-dir -i "${PIP_INDEX}" -r requirements/production.txt \
+    && rm -rf /var/lib/apt/lists/*
+
+# lock 变化只使 pip 层失效；BuildKit 下载缓存不进入最终镜像。
+COPY requirements/production.lock /app/requirements/production.lock
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -i "${PIP_INDEX}" --require-hashes -r requirements/production.lock \
     && apt-get purge -y --auto-remove gcc build-essential \
     && rm -rf /var/lib/apt/lists/*

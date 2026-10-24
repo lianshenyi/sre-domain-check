@@ -6,7 +6,7 @@ set -euo pipefail
 #   ./build.sh v1.0.1             # 构建所有镜像（指定版本标签）
 #   ./build.sh latest backend     # 只构建 backend
 #   ./build.sh v1.0.1 worker scheduler  # 只构建 worker + scheduler
-#   REGION=cn ./build.sh v1.0.1   # 国内源构建（apt/pip/npm 走阿里云/npmmirror）
+#   REGION=cn ./build.sh v1.0.1   # 国内源构建（apt archive/pip/npm）
 #   REGION=global ./build.sh      # 国际源构建（默认）
 
 TAG="${1:-latest}"
@@ -21,25 +21,21 @@ fi
 REGION="${REGION:-global}"
 
 if [ "$REGION" = "cn" ]; then
-  APT_MIRROR="mirrors.aliyun.com"
+  APT_ARCHIVE_BASE="https://mirrors.cloud.tencent.com/debian-archive"
   PIP_INDEX="https://mirrors.aliyun.com/pypi/simple/"
   NPM_REGISTRY="https://registry.npmmirror.com"
 else
-  APT_MIRROR="deb.debian.org"
+  APT_ARCHIVE_BASE="https://mirrors.cloud.tencent.com/debian-archive"
   PIP_INDEX="https://pypi.org/simple/"
   NPM_REGISTRY="https://registry.npmjs.org"
 fi
 
-# bullseye 已 EOL，安全问题包已从常规镜像移除，只能从 archive 获取
-APT_SECURITY_MIRROR="archive.debian.org"
-
 BASE_IMAGE="domain-admin-base:${TAG}"
 
-echo "==> 镜像源: ${REGION} (apt=${APT_MIRROR}, apt-security=${APT_SECURITY_MIRROR}, pip=${PIP_INDEX}, npm=${NPM_REGISTRY})"
+echo "==> 镜像源: ${REGION} (apt-archive=${APT_ARCHIVE_BASE}, pip=${PIP_INDEX}, npm=${NPM_REGISTRY})"
 echo "==> 构建基础镜像: ${BASE_IMAGE}"
 docker build --network host \
-  --build-arg APT_MIRROR="${APT_MIRROR}" \
-  --build-arg APT_SECURITY_MIRROR="${APT_SECURITY_MIRROR}" \
+  --build-arg APT_ARCHIVE_BASE="${APT_ARCHIVE_BASE}" \
   --build-arg PIP_INDEX="${PIP_INDEX}" \
   -t "${BASE_IMAGE}" \
   -f domain-admin/Dockerfile.base \

@@ -90,6 +90,8 @@ def init_app(flask_app):
 
     # 注册路由
     register.register_app_routers(flask_app, api_map.routes)
+    register.register_app_routers(flask_app, api_map.agent_routes, methods=('POST',))
+    flask_app.add_url_rule('/api/getAgentRunner', view_func=api_map.agent_api.get_agent_runner)
 
     # 全局异常捕获，也相当于一个视图函数
     flask_app.register_error_handler(Exception, handler.error_handler)

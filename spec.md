@@ -461,3 +461,7 @@ docker compose start backend worker scheduler frontend
 - 修改前先查看 `docs/` 中最新的更新记录。
 - 代码尽量拆分，避免单文件过长，便于理解运行流程。
 - `.codex/` 与 `openspec/` 保留用于 Codex / OpenSpec 工作流；`domain-admin/http/` 的本地 token 放 `http-client.private.env.json`，不入库。
+
+## 19. VIDE-113 · 区域 Agent
+
+区域 Agent 从中心 HTTPS API 主动领取指定域名的证书检查。本地只需要 Python，中心继续使用现有 Compose 拓扑。管理端和 Agent 端字段、状态及期限见 [区域 Agent 接口契约](openspec/changes/add-regional-domain-agents/design.md#api-契约)。

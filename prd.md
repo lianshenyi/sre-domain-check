@@ -139,3 +139,7 @@ Domain Admin 是一个域名与 SSL 证书管理平台，用于监控域名到�
 | M2 | 服务启动 | 6 个容器 Up，依赖健康 |
 | M3 | 验证通过 | AC-1 ～ AC-7 全部通过 |
 | M4 | 运维交接 | AC-8、AC-9 通过，任务清单归档 |
+
+## VIDE-113 · 多地区证书复测
+
+管理员登记自有 Agent，在已有域名记录上选择节点发起区域复测。页面展示安装命令、节点连通状态及各地区的独立结果。验收覆盖双地区结果、一次性注册与节点权限、心跳离线及重连、中心巡检回归。详见 [OpenSpec](openspec/changes/add-regional-domain-agents/specs/regional-domain-checks/spec.md)。

@@ -155,3 +155,7 @@
 - 第 0 ～ 4 节全部勾选，PRD 中 AC-1 ～ AC-7 全部通过。
 - 第 5 节备份、恢复演练、升级 / 回滚流程确认完成（AC-8）。
 - README 文档索引已更新，所有文档不含真实账号密码（AC-9）。
+
+## VIDE-113 · 多地区 Agent
+
+登记、权限、区域复测、离线重连和中心路径回归的任务见 [OpenSpec 任务清单](openspec/changes/add-regional-domain-agents/tasks.md)。

@@ -4,7 +4,7 @@
 """
 from __future__ import print_function, unicode_literals, absolute_import, division
 from domain_admin.api import (
-    cert_api, ip_api, notify_api,
+    agent_api, cert_api, ip_api, notify_api,
     whois_api, address_api,
     domain_info_api, prometheus_api,
     log_operation_api, group_user_api,
@@ -241,4 +241,17 @@ routes = {
 
     # 微信域名禁封状态检查
     '/api/validateUrlForWechat': check_wechat_api.validate_url_for_wechat,
+}
+
+# Agent 的领取请求会写入心跳，统一使用 POST。
+agent_routes = {
+    '/api/createAgent': agent_api.create_agent,
+    '/api/renewAgentEnrollment': agent_api.renew_agent_enrollment,
+    '/api/revokeAgent': agent_api.revoke_agent,
+    '/api/getAgentList': agent_api.get_agent_list,
+    '/api/startAgentDomainCheck': agent_api.start_agent_domain_check,
+    '/api/getAgentCheckResults': agent_api.get_agent_check_results,
+    '/api/enrollAgent': agent_api.enroll_agent,
+    '/api/pollAgentTask': agent_api.poll_agent_task,
+    '/api/submitAgentTaskResult': agent_api.submit_agent_task_result,
 }

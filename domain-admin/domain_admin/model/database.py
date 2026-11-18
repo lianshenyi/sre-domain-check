@@ -10,6 +10,7 @@ from domain_admin.model import base_model, domain_icp_model, tag_model, certific
     deploy_webhook_model
 from domain_admin.model import (
     address_model,
+    agent_model,
     log_operation_model,
     group_user_model,
     log_async_task_model,
@@ -51,6 +52,8 @@ tables = [
     (deploy_cert_model.DeployCertModel, None),
     (dns_model.DnsModel, None),
     (deploy_webhook_model.DeployWebhookModel, None),
+    (agent_model.AgentNode, None),
+    (agent_model.AgentCheck, None),
 ]
 
 _INIT_LOCK_NAME = 'domain_admin:init_database'

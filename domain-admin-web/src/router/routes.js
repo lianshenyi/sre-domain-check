@@ -298,6 +298,16 @@ export const routes = [
           roles: [RoleEnum.Admin],
         },
       },
+      {
+        path: 'agents',
+        name: 'admin-agent-list',
+        component: () => import('../views/agent-list/index.vue'),
+        meta: {
+          title: 'Agent 节点',
+          icon: 'Connection',
+          roles: [RoleEnum.Admin],
+        },
+      },
     ],
   },
 

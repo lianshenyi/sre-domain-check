@@ -28,6 +28,13 @@ export default {
   // getDomainFilterData: '/getDomainFilterData',
   getDomainGroupFilter: '/getDomainGroupFilter',
 
+  createAgent: '/createAgent',
+  renewAgentEnrollment: '/renewAgentEnrollment',
+  revokeAgent: '/revokeAgent',
+  getAgentList: '/getAgentList',
+  startAgentDomainCheck: '/startAgentDomainCheck',
+  getAgentCheckResults: '/getAgentCheckResults',
+
   getAllSystemConfig: '/getAllSystemConfig',
   updateSystemConfig: '/updateSystemConfig',
   getSystemVersion: '/getSystemVersion',

@@ -28,7 +28,7 @@
 - [域名列表移动端横向溢出修复](docs/20261019-05-fix-mobile-domain-list-overflow.md)
 - [首次空库初始化并发竞态修复](docs/20261019-06-fix-initial-database-race.md)
 - [第一阶段构建缓存与范围发布优化](docs/20261022-07-build-cache-scope-optimization.md)
-- [VIDE-113 多地区 Agent 与域名证书复测](docs/20261118-01-regional-domain-agents.md)
+- [VIDE-113 多地区 Agent 登记、连通状态与区域复测操作](docs/20261118-01-regional-domain-agents.md)
 - [开发与部署指南（CLAUDE.md）](CLAUDE.md)
 - [Codex 协作说明（AGENTS.md）](AGENTS.md)
 - [运行手册（RUNBOOK.md）](RUNBOOK.md)

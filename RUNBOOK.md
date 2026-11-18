@@ -48,6 +48,13 @@ curl -i http://localhost:${HTTP_PORT:-8080}/api/getSystemVersion
 - 前端 502：执行 `docker compose logs --tail=200 backend`。
 - 端口冲突：在 `.env` 调整 `HTTP_PORT` 后重新执行 `docker compose up -d`。
 
+## 区域 Agent 验证
+
+- 使用首次初始化的管理员账号（`ADMIN_USERNAME`、`ADMIN_PASSWORD`），在「证书监控」登记一条该账号可读的测试域名。
+- 在 HTTPS 控制台的「系统管理 → Agent 节点」登记两个测试节点。安装和区域复测沿用控制台的 `VITE_APP_API` 与现有鉴权，Agent 使用控制台的 HTTPS origin。
+- 登记或重签按钮不可用时，检查浏览器打开的是 HTTPS 地址。节点保持离线时，检查 runner 进程、控制端证书信任和节点日志。安装码过期后在控制台重签。
+- 安装、复测与回滚步骤见[多地区 Agent 操作说明](docs/20261118-01-regional-domain-agents.md)。
+
 ## 依赖 base 与回滚
 
 - Python base 由 `production.lock` 的摘要命名；日常使用 `scripts/build-images.sh frontend|backend|deps|all` 或 `scripts/release-compose.sh <scope>`，仅依赖变更会重建 base。

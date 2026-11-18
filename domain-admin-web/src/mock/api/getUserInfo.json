@@ -3,6 +3,7 @@
   "data": {
     "id": 1,
     "username": "admin",
+    "role": 10,
     "avatar_url": "",
     "before_expire_days": 3,
     "email_list": ["email@qq.com"],

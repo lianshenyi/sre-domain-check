@@ -26,9 +26,7 @@ export const useUserStore = defineStore({
     },
 
     isAdmin(state) {
-      if (state._userInfo) {
-        return state._userInfo.username == 'admin'
-      }
+      return state._userInfo?.role === RoleEnum.Admin
     },
 
     userRoles(state) {

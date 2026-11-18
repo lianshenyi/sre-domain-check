@@ -297,7 +297,7 @@
 
       <el-table-column
         :label="$t('操作')"
-        width="100"
+        :width="isAdmin ? 176 : 100"
         header-align="center"
         align="center"
       >
@@ -305,11 +305,16 @@
           <!-- 更新 -->
           <el-link
             :underline="false"
+            aria-label="中心刷新"
             type="primary"
             class="mr-sm"
             @click="handleUpdateRowDomainInfo(scope.row)"
             ><el-icon><Refresh /></el-icon
           ></el-link>
+
+          <el-button v-if="isAdmin" link type="primary" @click="regionalCheckDomain = scope.row">
+            区域复测
+          </el-button>
 
           <!-- 用户可操作 -->
           <template v-if="RoleEnum.Admin != role">
@@ -340,6 +345,12 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <RegionalCheckDialog
+      v-if="isAdmin && regionalCheckDomain"
+      :domain="regionalCheckDomain"
+      @close="regionalCheckDomain = null"
+    />
 
     <!-- 编辑框 -->
     <DataFormDialog
@@ -379,6 +390,9 @@ import ExpireProgress from '@/components/ExpireProgress.vue'
 
 import AddressListgDialog from '@/components/address-list/DataTableDialog.vue'
 import { RoleEnum } from '@/emuns/role-enums.js'
+import { mapState } from 'pinia'
+import { useUserStore } from '@/store/user-store.js'
+import RegionalCheckDialog from './RegionalCheckDialog.vue'
 
 export default {
   name: '',
@@ -391,6 +405,7 @@ export default {
     ExpireProgress,
 
     AddressListgDialog,
+    RegionalCheckDialog,
   },
 
   emits: ['on-success', 'selection-change', 'sort-change', 'on-refresh-row'],
@@ -401,12 +416,15 @@ export default {
     },
   },
 
-  computed: {},
+  computed: {
+    ...mapState(useUserStore, ['isAdmin']),
+  },
 
   data() {
     return {
       RoleEnum,
       currentRow: null,
+      regionalCheckDomain: null,
       dialogVisible: false,
       dialogDetailVisible: false,
 

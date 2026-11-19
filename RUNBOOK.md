@@ -19,7 +19,7 @@ npm ci
 npm run dev
 ```
 
-后端本地开发（默认 Flask 地址由应用配置决定）：
+后端本地开发（`python app.py` 监听端口 8000）：
 
 ```bash
 cd domain-admin
@@ -47,6 +47,12 @@ curl -i http://localhost:${HTTP_PORT:-8080}/api/getSystemVersion
 - 后端无法连库：确认 MySQL healthy，且 `DB_CONNECT_URL` 与 `.env` 的 MySQL 用户、密码、数据库一致；`env_file` 不会展开 `${...}`。
 - 前端 502：执行 `docker compose logs --tail=200 backend`。
 - 端口冲突：在 `.env` 调整 `HTTP_PORT` 后重新执行 `docker compose up -d`。
+
+## 证书批量刷新验证
+
+- 前端连接本地 Flask 时，从前端目录运行 `VITE_APP_API=http://127.0.0.1:8000/api npm run dev`。
+- 使用有权读取测试域名的账号进入「证书监控」，点击「全部更新」。用可正常读取证书的域名和探测失败的测试域名覆盖成功与失败计数。
+- 若进度查询持续重试，检查浏览器中 `getDomainCertBatchProgress` 的响应和后台任务日志。长时间等待执行时，检查 worker 与 Redis 队列。
 
 ## 区域 Agent 验证
 

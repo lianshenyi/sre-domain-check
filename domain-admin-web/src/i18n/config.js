@@ -190,6 +190,61 @@ export default [
     'zh-TW': '全部更新',
   },
   {
+    'zh-CN': '正在提交',
+    'en-US': 'Submitting',
+    'zh-TW': '正在提交',
+  },
+  {
+    'zh-CN': '等待执行',
+    'en-US': 'Queued',
+    'zh-TW': '等待執行',
+  },
+  {
+    'zh-CN': '正在更新',
+    'en-US': 'Updating',
+    'zh-TW': '正在更新',
+  },
+  {
+    'zh-CN': '已完成',
+    'en-US': 'Processed',
+    'zh-TW': '已完成',
+  },
+  {
+    'zh-CN': '成功',
+    'en-US': 'Succeeded',
+    'zh-TW': '成功',
+  },
+  {
+    'zh-CN': '失败',
+    'en-US': 'Failed',
+    'zh-TW': '失敗',
+  },
+  {
+    'zh-CN': '批量更新完成',
+    'en-US': 'Batch update complete',
+    'zh-TW': '批次更新完成',
+  },
+  {
+    'zh-CN': '批量更新部分失败',
+    'en-US': 'Batch update partially failed',
+    'zh-TW': '批次更新部分失敗',
+  },
+  {
+    'zh-CN': '批量更新失败',
+    'en-US': 'Batch update failed',
+    'zh-TW': '批次更新失敗',
+  },
+  {
+    'zh-CN': '批量更新启动失败',
+    'en-US': 'Could not start the batch update',
+    'zh-TW': '無法啟動批次更新',
+  },
+  {
+    'zh-CN': '查询进度失败，正在重试',
+    'en-US': 'Could not load progress. Retrying',
+    'zh-TW': '無法查詢進度，正在重試',
+  },
+  {
     'zh-CN': '证书检查',
     'en-US': 'Cert Check',
     'zh-TW': '證書檢查',

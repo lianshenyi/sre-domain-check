@@ -20,6 +20,7 @@ export default {
   // getUpdateDomainStatusOfUser: '/getUpdateDomainStatusOfUser',
   // getCheckDomainStatusOfUser: '/getCheckDomainStatusOfUser',
   updateAllDomainCertInfoOfUser: '/updateAllDomainCertInfoOfUser',
+  getDomainCertBatchProgress: '/getDomainCertBatchProgress',
   importDomainFromFile: '/importDomainFromFile',
   exportDomainFile: '/exportDomainFile',
   getAllDomainListOfUser: '/getAllDomainListOfUser',

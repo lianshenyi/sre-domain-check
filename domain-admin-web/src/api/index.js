@@ -29,7 +29,7 @@ function httpRequest(url) {
 
     if (res.code == 0) {
       res.ok = true
-    } else {
+    } else if (!config?.silentError) {
       ElMessage.closeAll()
       ElMessage.error(res.msg)
     }

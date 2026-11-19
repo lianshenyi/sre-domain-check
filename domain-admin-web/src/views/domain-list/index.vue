@@ -84,7 +84,7 @@
             ><el-icon><Edit /></el-icon>批量操作</el-link
           >
         </template>
-        <UpdateDomainInfo @on-success="resetData"></UpdateDomainInfo>
+        <UpdateDomainInfo @batch-finished="refreshData"></UpdateDomainInfo>
 
         <template v-if="RoleEnum.Admin != role">
           <CheckDomainInfo

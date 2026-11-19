@@ -9,9 +9,11 @@
 ## 前端对接
 
 - `POST /api/updateAllDomainCertInfoOfUser` 返回 `data.task_id`。`POST /api/getDomainCertBatchProgress` 请求 `{ "task_id": 123 }`，仅发起人可读，响应 `data` 返回 `task_id`、`state`、`total`、`completed`、`success`、`failed`。`state` 为 `queued` / `running` / `succeeded` / `failed`；未取得总数时 `total` 为 `null`。
-- 现有域名列表“全部更新”不使用任务 ID、不会展示实时进度。管理员可手动刷新异步日志查看 `result` 中的计数。前端待验收：提交后轮询、显示进度和成功/失败数、到终态停止轮询并刷新证书列表。未改定时任务、注册信息/ICP 批处理和前端。
+- 「证书监控」的域名列表使用启动响应的任务 ID，每次查询结束后间隔 2 秒继续查询。任务未开始时总数显示为 `—`。页面展示已完成数、总数、成功数和失败数，成功及失败终态均停止轮询，并保留当前筛选和页码刷新列表。
+- 查询失败时保留最近一次计数，提示并间隔 5 秒重试。离开页面即取消浏览器请求和计时器，后台任务继续执行。任务结果也可在管理员的异步任务日志中查询。
 
 ## 验证
 
 - 在 `domain-admin` 运行 `PYTHONPATH=. python tests/service/benchmark_domain_list.py`。SQLite 中生成 10,000 条域名，普通用户每页 50 条，每条 SELECT 模拟 2 毫秒往返，取 30 次中位数。正常页 88.41 → 74.54 毫秒（7 → 6 条 SELECT）；越界页 85.68 → 45.60 毫秒（7 → 3 条）。每页组关系查询均为 2 → 1。耗时受本地调度影响，不作为线上 MySQL SLA。
 - `python -m pytest -q tests/service/test_domain_cert_batch.py tests/api/test_agent_api.py tests/test_hello.py`：10 通过。覆盖真实本地慢 TLS 连接超时回收、快项先计入进度、探测失败、局部成功保留、权限隔离、空批次、预算耗尽及 Redis 执行入口的收尾。测试用 SQLite 和模拟 Redis 锁，未运行生产 MySQL/Redis 环境。
+- 前端以浏览器请求桩复现排队及正常推进、部分失败与断网恢复、离页清理计时器和取消在途查询。验证两种终态都只刷新列表一次，且沿用当前筛选与页码。运行时通过现有 API 客户端连接真实服务。

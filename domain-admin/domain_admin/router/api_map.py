@@ -46,6 +46,7 @@ routes = {
     # "/api/updateDomainSetting": domain_api.update_domain_setting,
 
     "/api/updateAllDomainCertInfoOfUser": domain_api.update_all_domain_cert_info_of_user,
+    "/api/getDomainCertBatchProgress": domain_api.get_domain_cert_batch_progress,
     # "/api/sendDomainInfoListEmail": domain_api.send_domain_info_list_email,
     # "/api/checkDomainCert": domain_api.check_domain_cert,
     "/api/importDomainFromFile": domain_api.import_domain_from_file,

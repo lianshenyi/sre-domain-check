@@ -1,0 +1,18 @@
+# domain-cert-batches Specification
+
+## Purpose
+TBD - created by archiving change bound-domain-cert-batches. Update Purpose after archive.
+## Requirements
+### Requirement: 用户批量刷新可追踪
+
+系统 SHALL 在用户批量刷新时返回任务 ID，并允许发起人查询逐项进度及终态。
+
+#### Scenario: 一项超时或失败
+
+- **WHEN** 部分域名超时或探测失败
+- **THEN** 其他域名继续执行，最终成功数和失败数之和等于总数，任务状态为失败
+
+#### Scenario: 查看任务进度
+
+- **WHEN** 发起者提供任务 ID
+- **THEN** 系统返回当前计数和任务状态；其他用户不能读取该任务

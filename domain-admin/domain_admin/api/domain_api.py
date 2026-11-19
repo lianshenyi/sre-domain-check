@@ -17,6 +17,7 @@ from domain_admin.model.domain_info_model import DomainInfoModel
 from domain_admin.model.domain_model import DomainModel
 from domain_admin.model.group_model import GroupModel
 from domain_admin.model.group_user_model import GroupUserModel
+from domain_admin.model.log_async_task_model import AsyncTaskModel
 from domain_admin.service import async_task_service, domain_info_service, group_service, operation_service, auth_service
 from domain_admin.service import domain_service
 from domain_admin.service import file_service
@@ -409,8 +410,32 @@ def update_all_domain_cert_info_of_user():
     """
     current_user_id = g.user_id
 
-    domain_service.update_all_domain_cert_info_of_user(user_id=current_user_id)
-    # async_task_service.submit_task(fn=domain_service.update_all_domain_cert_info_of_user, user_id=current_user_id)
+    task = domain_service.update_all_domain_cert_info_of_user(user_id=current_user_id)
+    return {'task_id': task.id}
+
+
+@auth_service.permission(role=RoleEnum.USER)
+def get_domain_cert_batch_progress():
+    payload = request.get_json(silent=True)
+    task_id = payload.get('task_id') if isinstance(payload, dict) else None
+    if type(task_id) is not int or not 0 < task_id <= 2147483647:
+        raise AppException('无效的任务 ID')
+
+    task = AsyncTaskModel.get_or_none(
+        AsyncTaskModel.id == task_id,
+        AsyncTaskModel.user_id == g.user_id,
+        AsyncTaskModel.function_name == 'domain_admin.service.domain_service.update_all_domain_cert_info_of_user',
+    )
+    if task is None:
+        raise DataNotFoundAppException('任务不存在')
+
+    progress = async_task_service.read_progress(task.result)
+    if task.status is None:
+        state = 'running' if progress is not None else 'queued'
+    else:
+        state = 'succeeded' if task.status else 'failed'
+    counts = progress or dict(total=None, completed=0, success=0, failed=0)
+    return dict(counts, task_id=task.id, state=state)
 
 
 @auth_service.permission(role=RoleEnum.USER)
@@ -588,7 +613,7 @@ def get_domain_list():
     group_id = request.json.get('group_id')
     group_ids = request.json.get('group_ids')
     expire_days = request.json.get('expire_days')
-    role = request.json.get('role')
+    role = g.current_user_row.role if request.json.get('role') == RoleEnum.ADMIN else RoleEnum.USER
 
     order_prop = request.json.get('order_prop') or 'expire_days'
     order_type = request.json.get('order_type') or 'ascending'
@@ -601,7 +626,7 @@ def get_domain_list():
 
     else:
         # 所在分组
-        group_user_rows = GroupUserModel.select().where(
+        group_user_rows = GroupUserModel.select(GroupUserModel.group_id, GroupUserModel.has_edit_permission).where(
             GroupUserModel.user_id == current_user_id
         )
 
@@ -617,6 +642,7 @@ def get_domain_list():
         'expire_days': expire_days,
         'role': role,
         'user_id': current_user_id,
+        'user_group_ids': group_user_permission_map.keys(),
     }
 
     query = domain_service.get_domain_list_query(**params)
@@ -642,6 +668,7 @@ def get_domain_list():
             ]
         ), lst))
 
+    if lst:
         # 加载主机数量
         domain_service.load_address_count(lst)
 

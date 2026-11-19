@@ -5,8 +5,12 @@ domain_service.py
 from __future__ import print_function, unicode_literals, absolute_import, division
 
 import io
+import json
+import subprocess
+import sys
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 from peewee import chunked, fn
@@ -180,14 +184,14 @@ def update_address_row_info_with_sync_domain_row(address_id):
     sync_address_info_to_domain_info(domain_row)
 
 
-def sync_address_info_to_domain_info(domain_row):
+def sync_address_info_to_domain_info(domain_row, increment_version=True):
     """
     同步主机信息到域名信息表
     :param domain_row: DomainModel
     :return:
     """
     first_address_row = AddressModel.select().where(
-        AddressModel.domain_id == domain_row.id
+        AddressModel.domain_id == str(domain_row.id)
     ).order_by(
         AddressModel.ssl_expire_days.asc()
     ).first()
@@ -208,7 +212,7 @@ def sync_address_info_to_domain_info(domain_row):
         expire_days=first_address_row.real_time_ssl_expire_days,
         connect_status=connect_status,
         update_time=datetime_util.get_datetime(),
-        version=DomainModel.version + 1
+        version=DomainModel.version + int(increment_version)
     ).where(
         DomainModel.id == domain_row.id
     ).execute()
@@ -305,41 +309,107 @@ def update_all_domain_cert_info():
             logger.error(traceback.format_exc())
 
 
-@async_task_service.async_task_decorator("更新证书信息")
+BATCH_PROBE_WORKERS = 4
+BATCH_PROBE_TIMEOUT = 30
+BATCH_PROBE_BUDGET = 3300
+
+
+def _run_batch_probe(row, hosts, timeout):
+    payload = json.dumps({
+        'domain': row.domain, 'port': row.port, 'ssl_type': row.ssl_type,
+        'manual_hosts': hosts, 'root_domain': row.root_domain,
+    })
+    completed = subprocess.run(
+        [sys.executable, '-m', 'domain_admin.utils.cert_util.batch_probe'],
+        input=payload, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        text=True, timeout=timeout, check=True,
+    )
+    return json.loads(completed.stdout)
+
+
+def _save_batch_probe(row, probe):
+    certificates = probe['certificates']
+    if not certificates:
+        return False
+
+    with db.connection_context(), db.atomic():
+        claimed = DomainModel.update(
+            root_domain=probe['root_domain'], version=DomainModel.version + 1,
+        ).where(
+            DomainModel.id == row.id, DomainModel.version == row.version,
+            DomainModel.domain == row.domain, DomainModel.port == row.port,
+            DomainModel.ssl_type == row.ssl_type,
+        ).execute()
+        if not claimed:
+            return False
+
+        AddressModel.delete().where(
+            AddressModel.domain_id == str(row.id), AddressModel.source == SourceEnum.AUTO,
+        ).execute()
+        hosts = list(dict.fromkeys(probe['resolved_hosts']))
+        if hosts:
+            AddressModel.insert_many([
+                {'domain_id': str(row.id), 'host': host} for host in hosts
+            ]).on_conflict_ignore().execute()
+
+        for host, cert in certificates.items():
+            address = AddressModel()
+            if cert:
+                address.ssl_start_time = datetime.fromisoformat(cert['start_date'])
+                address.ssl_expire_time = datetime.fromisoformat(cert['expire_date'])
+            AddressModel.update(
+                ssl_start_time=address.ssl_start_time,
+                ssl_expire_time=address.ssl_expire_time,
+                ssl_expire_days=address.real_time_ssl_expire_days,
+                update_time=datetime_util.get_datetime(),
+            ).where(AddressModel.domain_id == str(row.id), AddressModel.host == host).execute()
+
+        sync_address_info_to_domain_info(row, increment_version=False)
+
+    return all(certificates.values())
+
+
+@async_task_service.async_task_decorator("更新证书信息", track_progress=True)
 def update_all_domain_cert_info_of_user(user_id):
-    """
-    更新用户的所有证书信息
-    :return:
-    """
     with db.connection_context():
         rows = list(DomainModel.select().where(
             DomainModel.user_id == user_id,
             DomainModel.auto_update == True
-        ))
+        ).order_by(DomainModel.id))
 
-    total = len(rows)
-    success_count = 0
-    fail_count = 0
-    failed_domains = []
-
-    for idx, row in enumerate(rows, 1):
-        try:
-            logger.info('[%d/%d] updating domain: %s (id=%s)', idx, total, row.domain, row.id)
-            print('[update_all] [{}/{}] domain={} id={}'.format(idx, total, row.domain, row.id))
+    progress = {'total': len(rows), 'completed': 0, 'success': 0, 'failed': 0}
+    async_task_service.report_progress(progress)
+    deadline = time.monotonic() + BATCH_PROBE_BUDGET
+    with ThreadPoolExecutor(max_workers=BATCH_PROBE_WORKERS) as pool:
+        for wave in chunked(rows, BATCH_PROBE_WORKERS):
             with db.connection_context():
-                update_domain_row(row)
-            success_count += 1
-        except Exception as e:
-            fail_count += 1
-            failed_domains.append(row.domain)
-            logger.error('[%d/%d] failed domain: %s (id=%s)\n%s', idx, total, row.domain, row.id, traceback.format_exc())
-            print('[update_all] [{}/{}] FAILED domain={} err={}'.format(idx, total, row.domain, e))
+                addresses = list(AddressModel.select(AddressModel.domain_id, AddressModel.host).where(
+                    AddressModel.domain_id.in_([str(row.id) for row in wave]),
+                    AddressModel.source != SourceEnum.AUTO,
+                ))
+            timeout = min(BATCH_PROBE_TIMEOUT, deadline - time.monotonic())
+            if timeout <= 0:
+                progress['failed'] += progress['total'] - progress['completed']
+                progress['completed'] = progress['total']
+                break
 
-    summary = 'user_id={}, total={}, success={}, fail={}'.format(user_id, total, success_count, fail_count)
-    if failed_domains:
-        summary += ', failed_domains={}'.format(failed_domains[:20])
-    logger.info('[update_all] done: %s', summary)
-    print('[update_all] done: {}'.format(summary))
+            pending = {
+                pool.submit(_run_batch_probe, row, [
+                    address.host for address in addresses if address.domain_id == str(row.id)
+                ], timeout): row for row in wave
+            }
+            for future in as_completed(pending):
+                row = pending[future]
+                try:
+                    success = _save_batch_probe(row, future.result())
+                except Exception:
+                    logger.exception('证书批量探测失败，域名记录 ID=%s', row.id)
+                    success = False
+                progress['completed'] += 1
+                progress['success' if success else 'failed'] += 1
+                async_task_service.report_progress(progress)
+
+    return async_task_service.TrackedTaskResult(progress)
 
 
 def get_domain_info_list(user_id=None):
@@ -582,20 +652,14 @@ def load_address_count(lst):
     return lst
 
 
-def get_domain_list_query(keyword, group_id, group_ids, expire_days, user_id, role):
-    user_group_ids = None
-
-    if role == RoleEnum.ADMIN:
-        pass
-
-    else:
+def get_domain_list_query(keyword, group_id, group_ids, expire_days, user_id, role, user_group_ids=None):
+    if role != RoleEnum.ADMIN and user_group_ids is None:
         # 所在分组
-        group_user_rows = GroupUserModel.select().where(
+        group_user_rows = GroupUserModel.select(GroupUserModel.group_id).where(
             GroupUserModel.user_id == user_id
         )
 
-        group_user_list = list(group_user_rows)
-        user_group_ids = [row.group_id for row in group_user_list]
+        user_group_ids = [row.group_id for row in group_user_rows]
 
     query = DomainModel.select()
 
@@ -607,14 +671,11 @@ def get_domain_list_query(keyword, group_id, group_ids, expire_days, user_id, ro
 
     if group_ids:
         query = query.where(DomainModel.group_id.in_(group_ids))
-    else:
-        if role == RoleEnum.ADMIN:
-            pass
-
-        elif user_group_ids:
+    if role != RoleEnum.ADMIN:
+        if user_group_ids:
             query = query.where(
                 (DomainModel.user_id == user_id)
-                | (DomainModel.group_id.in_(user_group_ids))
+                | (DomainModel.group_id.in_(list(user_group_ids)))
             )
         else:
             query = query.where(DomainModel.user_id == user_id)

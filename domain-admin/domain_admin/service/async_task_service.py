@@ -7,8 +7,11 @@ async_task_service.py
 from __future__ import print_function, unicode_literals, absolute_import, division
 
 import importlib
+import json
 import traceback
 from concurrent.futures.thread import ThreadPoolExecutor
+from contextvars import ContextVar
+from dataclasses import dataclass
 from functools import wraps
 
 import six
@@ -38,6 +41,50 @@ except ImportError:  # pragma: no cover
 
 
 executor = ThreadPoolExecutor()
+_current_task_id = ContextVar('async_task_id', default=None)
+
+
+@dataclass
+class TrackedTaskResult:
+    progress: dict
+
+
+def _invoke_tracked_task(task_id, func, args, kwargs):
+    token = _current_task_id.set(task_id)
+    try:
+        return func(*args, **kwargs)
+    finally:
+        _current_task_id.reset(token)
+
+
+def report_progress(progress):
+    task_id = _current_task_id.get()
+    if task_id is not None:
+        _update_async_task(task_id, {
+            'result': json.dumps(progress),
+            'update_time': datetime_util.get_datetime(),
+        })
+
+
+def read_progress(result):
+    try:
+        value = json.loads(result)
+    except ValueError:
+        return None
+    if isinstance(value, dict) and {'total', 'completed', 'success', 'failed'} <= value.keys():
+        return value
+    return None
+
+
+def _tracked_failure_result(task_id):
+    with db.connection_context():
+        row = AsyncTaskModel.get_or_none(AsyncTaskModel.id == task_id)
+    progress = read_progress(row.result) if row else None
+    if progress is None:
+        return ''
+    progress['failed'] = progress['total'] - progress['success']
+    progress['completed'] = progress['total']
+    return json.dumps(progress)
 
 
 class RedisAsyncTaskExecutor(object):
@@ -253,9 +300,10 @@ def execute_async_task(function_name, async_task_row_id, args=None, kwargs=None)
     # RQ worker fork 子进程执行任务时 Flask app context 会丢失，
     # 而被 @async_task_decorator 装饰的函数内部会访问 flask.g，
     # 所以这里需要手动推入 app context。
-    worker_app = _get_worker_app()
+    tracked = False
 
     try:
+        worker_app = _get_worker_app()
         with worker_app.app_context():
             with redis_lock_util.lock(lock_name, blocking=False) as acquired:
                 if not acquired:
@@ -263,41 +311,45 @@ def execute_async_task(function_name, async_task_row_id, args=None, kwargs=None)
                     is_success = False
                 else:
                     func = _resolve_function(function_name)
+                    tracked = getattr(func, '_track_progress', False)
                     # 不再用 connection_context 包裹整个任务函数，
                     # 避免长时间网络 I/O 导致 MySQL 连接超时断开。
                     # 各任务函数自行管理数据库连接。
-                    result = func(*args, **kwargs)
-                    is_success = True
-    except Exception as e:
+                    if tracked:
+                        outcome = _invoke_tracked_task(async_task_row_id, func, args, kwargs)
+                        result = json.dumps(outcome.progress)
+                        is_success = not outcome.progress['failed']
+                    else:
+                        result = func(*args, **kwargs)
+                        is_success = True
+    except Exception:
         is_success = False
         # 保存完整堆栈作为 result，避免某些异常 str() 返回空字符串
         # （如 Exception() 无参数、InterfaceError(0, '') 等）导致丢失错误信息
         tb_text = traceback.format_exc()
-        result = tb_text or six.text_type(e) or repr(e)
+        result = _tracked_failure_result(async_task_row_id) if tracked else tb_text
         logger.error(tb_text)
         # 生产模式 logger 只写文件，print 确保 kubectl logs 可见
         print('[execute_async_task] task failed: func={}, row_id={}\n{}'.format(
             function_name, async_task_row_id, tb_text
         ))
     finally:
-        # 任务执行完毕，清除 pending 标记允许后续提交新任务。
-        # executing flag 不立即清除，而是设置短 TTL（30s）作为冷却窗口，
-        # 让队列中紧随其后的残留重复任务在此窗口内被 try_set_flag 拒绝。
-        # 如果立即清除，RQ 串行消费时下一个残留任务会立刻获取到 flag 继续执行。
-        redis_lock_util.set_flag_ttl('executing:{}'.format(scope_key), timeout=30)
-        redis_lock_util.clear_flag(pending_flag)
-
-    if result:
-        result = six.text_type(result)
-    else:
-        result = ''
-
-    _update_async_task(async_task_row_id, {
-        'status': is_success,
-        'result': result[:2000] if result else '',
-        'end_time': datetime_util.get_datetime(),
-        'update_time': datetime_util.get_datetime(),
-    })
+        result = six.text_type(result) if result else ''
+        try:
+            _update_async_task(async_task_row_id, {
+                'status': is_success,
+                'result': result[:2000],
+                'end_time': datetime_util.get_datetime(),
+                'update_time': datetime_util.get_datetime(),
+            })
+        finally:
+            try:
+                if tracked:
+                    redis_lock_util.clear_flag('executing:{}'.format(scope_key))
+                else:
+                    redis_lock_util.set_flag_ttl('executing:{}'.format(scope_key), timeout=30)
+            finally:
+                redis_lock_util.clear_flag(pending_flag)
 
     if not is_success:
         raise RuntimeError(result or 'unknown error (no detail captured)')
@@ -305,12 +357,15 @@ def execute_async_task(function_name, async_task_row_id, args=None, kwargs=None)
     return result
 
 
-def async_task_decorator(task_name):
+def async_task_decorator(task_name, track_progress=False):
     """
     执行异步任务的装饰器
     """
 
     def outer_wrapper(func):
+        if track_progress:
+            func._track_progress = True
+
         @wraps(func)
         def wrapper(*args, **kwargs):
             if hasattr(g, 'user_id'):
@@ -330,19 +385,24 @@ def async_task_decorator(task_name):
                 if not redis_lock_util.try_set_flag(pending_flag, timeout=3600):
                     raise AppException(_busy_message(function_name, args, kwargs))
 
-                async_task_row = AsyncTaskModel.create(
-                    user_id=current_user_id,
-                    task_name=task_name,
-                    function_name=function_name,
-                    params=_serialize_params(args, kwargs),
-                    start_time=datetime_util.get_datetime()
-                )
-
+                async_task_row = None
                 try:
+                    async_task_row = AsyncTaskModel.create(
+                        user_id=current_user_id,
+                        task_name=task_name,
+                        function_name=function_name,
+                        params=_serialize_params(args, kwargs),
+                        start_time=datetime_util.get_datetime()
+                    )
                     submit_task(func, *args, _async_task_row_id=async_task_row.id, **kwargs)
                 except Exception:
                     # 提交失败时清除标记
                     redis_lock_util.clear_flag(pending_flag)
+                    if async_task_row is not None and track_progress:
+                        _update_async_task(async_task_row.id, {
+                            'status': False, 'end_time': datetime_util.get_datetime(),
+                            'update_time': datetime_util.get_datetime(),
+                        })
                     raise
 
                 return async_task_row
@@ -363,9 +423,12 @@ def async_task_decorator(task_name):
                 try:
                     result = future.result()
                     is_success = True
+                    if track_progress:
+                        is_success = not result.progress['failed']
+                        result = json.dumps(result.progress)
                 except Exception as e:
                     is_success = False
-                    result = e
+                    result = _tracked_failure_result(async_task_row.id) if track_progress else e
                     logger.error(traceback.format_exc())
 
                 if result:
@@ -380,9 +443,12 @@ def async_task_decorator(task_name):
                     'update_time': datetime_util.get_datetime(),
                 })
 
-            ret = submit_task(func, *args, **kwargs)
+            if track_progress:
+                ret = submit_task(_invoke_tracked_task, async_task_row.id, func, args, kwargs)
+            else:
+                ret = submit_task(func, *args, **kwargs)
             ret.add_done_callback(done_callback)
-            return ret
+            return async_task_row if track_progress else ret
 
         return wrapper
 
